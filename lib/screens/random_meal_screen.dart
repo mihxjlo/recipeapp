@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:recipe_app/services/favorites_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../models/meal.dart';
 import '../models/meal_detail.dart';
 import '../services/api_service.dart';
 
@@ -13,8 +15,10 @@ class RandomMealScreen extends StatefulWidget {
 
 class _RandomMealScreenState extends State<RandomMealScreen> {
   final ApiService _apiService = ApiService();
+  final FavoritesService  _favoritesService = FavoritesService();
   MealDetail? _mealDetail;
   bool _isLoading = true;
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -29,9 +33,11 @@ class _RandomMealScreenState extends State<RandomMealScreen> {
 
     try {
       final mealDetail = await _apiService.getRandomMeal();
+      final isFav = await _favoritesService.isFavorite(mealDetail.idMeal);
       setState(() {
         _mealDetail = mealDetail;
         _isLoading = false;
+        _isFavorite = isFav;
       });
     } catch (e) {
       setState(() {
@@ -58,6 +64,35 @@ class _RandomMealScreenState extends State<RandomMealScreen> {
     }
   }
 
+
+  Future<void> _toggleFavorite() async {
+    if(_mealDetail == null) return;
+
+    final meal = Meal(
+      idMeal: _mealDetail!.idMeal,
+      strMeal: _mealDetail!.strMeal,
+      strMealThumb: _mealDetail!.strMealThumb,
+    );
+
+    final newStatus = await _favoritesService.toggleFavorite(meal);
+    setState(() {
+      _isFavorite = newStatus;
+    });
+
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              newStatus
+                  ? 'Added to favorites'
+                  : 'Removed from favorites'
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +108,19 @@ class _RandomMealScreenState extends State<RandomMealScreen> {
             pinned: true,
             backgroundColor: Colors.orange,
             actions: [
+              IconButton(
+                icon: Icon(_isFavorite
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                ),
+                color: _isFavorite ? Colors.red : Colors.white,
+                tooltip: _isFavorite
+                    ? 'Remove from favorites'
+                    : 'Add to favorites',
+                onPressed: _toggleFavorite,
+              ),
+
+              // refresh btn
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: 'New random recipe',

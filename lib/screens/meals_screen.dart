@@ -180,6 +180,7 @@ class _MealsScreenState extends State<MealsScreen> {
                 final meal = _filteredMeals[index];
                 return MealCard(
                   meal: meal,
+                  showFavoriteButton: true,
                   onTap: () {
                     Navigator.push(
                       context,

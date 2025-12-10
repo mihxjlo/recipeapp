@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:recipe_app/models/meal.dart';
+import 'package:recipe_app/services/favorites_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/meal_detail.dart';
 import '../services/api_service.dart';
@@ -18,8 +20,10 @@ class MealDetailScreen extends StatefulWidget {
 
 class _MealDetailScreenState extends State<MealDetailScreen> {
   final ApiService _apiService = ApiService();
+  final FavoritesService _favoritesService = FavoritesService();
   MealDetail? _mealDetail;
   bool _isLoading = true;
+  bool _isFavorite = true;
 
   @override
   void initState() {
@@ -30,8 +34,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   Future<void> _loadMealDetail() async {
     try {
       final mealDetail = await _apiService.getMealDetail(widget.mealId);
+      final isFav = await _favoritesService.isFavorite(widget.mealId);
       setState(() {
         _mealDetail = mealDetail;
+        _isFavorite = isFav;
         _isLoading = false;
       });
     } catch (e) {
@@ -59,6 +65,34 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     }
   }
 
+  Future<void> _toggleFavorite() async {
+    if(_mealDetail == null) return;
+
+    final meal = Meal(
+        idMeal: _mealDetail!.idMeal,
+        strMeal: _mealDetail!.strMeal,
+        strMealThumb: _mealDetail!.strMealThumb,
+    );
+
+    final newStatus = await _favoritesService.toggleFavorite(meal);
+    setState(() {
+      _isFavorite = newStatus;
+    });
+
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+              newStatus
+              ? 'Added to favorites'
+              : 'Removed from favorites'
+            ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +107,19 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
             expandedHeight: 300,
             pinned: true,
             backgroundColor: Colors.orange,
+            actions: [
+              IconButton(
+                  icon: Icon(_isFavorite
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+                  ),
+                color: _isFavorite ? Colors.red : Colors.white,
+                tooltip: _isFavorite
+                ? 'Remove from favorites'
+                : 'Add to favorites',
+                onPressed: _toggleFavorite,
+                  ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 _mealDetail!.strMeal,

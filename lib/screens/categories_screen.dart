@@ -6,6 +6,7 @@ import 'package:recipe_app/screens/random_meal_screen.dart';
 import 'package:recipe_app/services/api_service.dart';
 import 'package:recipe_app/widgets/category_card.dart';
 import '../models/category.dart';
+import 'favorites_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
 
@@ -73,6 +74,18 @@ class _CategoriesScreenState extends State<CategoriesScreen>{
         backgroundColor: Colors.lightBlue,
         actions: [
           IconButton(
+            icon: const Icon(Icons.favorite),
+            tooltip: 'Омилени рецепти',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FavoritesScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.shuffle),
             tooltip: 'Random Recipe',
             onPressed:(){
@@ -125,6 +138,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>{
                     child: CategoryCard(
                         category: category,
                         onTap: (){
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
